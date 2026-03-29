@@ -14,9 +14,16 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = Field(default="postgres")
     POSTGRES_SERVER: str = Field(default="localhost")
     POSTGRES_PORT: int = Field(default=5432)
-    POSTGRES_DB: str = Field(default="resume_lens")
+    POSTGRES_DB: str = Field(default="resume-lens")
+
+    DATABASE_URL: str
 
     LOG_LEVEL: str = "INFO"
+
+    SECRET_KEY: str = Field(default="change-me-in-production")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
     @property
     def database_url(self) -> str:
         return (
