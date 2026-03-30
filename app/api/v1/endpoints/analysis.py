@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.schemas.analysis import ResumeExtractionResponse
+from app.tools.job_fetcher import JobFetchError, fetch_job_description_text
 from app.tools.resume_extractor import ResumeExtractionError, extract_resume_text
 from app.tools.text_cleaner import clean_text
 
@@ -18,7 +19,10 @@ async def run_analysis(
     current_user: User = Depends(get_current_user),
     resume_file: UploadFile | None = File(default=None),
     resume_text: str | None = Form(default=None),
+    job_description_text: str | None = Form(default=None),
+    job_url: str | None = Form(default=None),
 ) -> ResumeExtractionResponse:
+    # Validate resume input
     if resume_file is None and not resume_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -31,11 +35,19 @@ async def run_analysis(
             detail="Provide only one of resume_file or resume_text.",
         )
 
+    # Validate JD input
+    if job_description_text and job_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide only one of job_description_text or job_url.",
+        )
+
+    # Resume extraction
     if resume_file is not None:
         file_bytes = await resume_file.read()
 
         try:
-            extracted_text = extract_resume_text(
+            normalized_resume_text = extract_resume_text(
                 filename=resume_file.filename or "uploaded_resume",
                 file_bytes=file_bytes,
             )
@@ -45,23 +57,56 @@ async def run_analysis(
                 detail=str(exc),
             ) from exc
 
-        return ResumeExtractionResponse(
-            source="file",
-            filename=resume_file.filename,
-            extracted_text=extracted_text,
-            extracted_char_count=len(extracted_text),
-        )
+        resume_source = "file"
+        resume_filename = resume_file.filename
+    else:
+        normalized_resume_text = clean_text(resume_text or "")
+        if not normalized_resume_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provided resume_text is empty after cleaning.",
+            )
 
-    cleaned_text = clean_text(resume_text or "")
-    if not cleaned_text:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provided resume_text is empty after cleaning.",
-        )
+        resume_source = "text"
+        resume_filename = None
+
+    # Job description extraction
+    normalized_job_description_text: str | None = None
+    job_description_source: str | None = None
+    normalized_job_url: str | None = None
+
+    if job_description_text:
+        normalized_job_description_text = clean_text(job_description_text)
+        if not normalized_job_description_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provided job_description_text is empty after cleaning.",
+            )
+        job_description_source = "text"
+
+    elif job_url:
+        try:
+            normalized_job_description_text = fetch_job_description_text(job_url)
+        except JobFetchError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+
+        job_description_source = "url"
+        normalized_job_url = job_url
 
     return ResumeExtractionResponse(
-        source="text",
-        filename=None,
-        extracted_text=cleaned_text,
-        extracted_char_count=len(cleaned_text),
+        resume_source=resume_source,
+        resume_filename=resume_filename,
+        resume_text=normalized_resume_text,
+        resume_char_count=len(normalized_resume_text),
+        job_description_source=job_description_source,
+        job_description_text=normalized_job_description_text,
+        job_description_char_count=(
+            len(normalized_job_description_text)
+            if normalized_job_description_text is not None
+            else None
+        ),
+        job_url=normalized_job_url,
     )

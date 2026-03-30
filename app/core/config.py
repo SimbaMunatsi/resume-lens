@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_BYTES: int = 2 * 1024 * 1024
     ALLOWED_RESUME_EXTENSIONS: str = ".pdf,.docx,.txt"
 
+    JOB_FETCH_TIMEOUT_SECONDS: int = 10
+    MAX_JOB_DESCRIPTION_CHARS: int = 12000
+
     @property
     def database_url(self) -> str:
         return (
