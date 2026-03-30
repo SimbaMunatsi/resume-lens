@@ -159,3 +159,27 @@ def test_analysis_run_returns_gap_analysis() -> None:
     assert data["candidate_profile"] is not None
     assert data["gap_analysis"] is not None
     assert "match_score" in data["gap_analysis"]    
+
+def test_analysis_run_returns_final_report() -> None:
+    token = create_user_and_get_token(
+        email="analysis_final@example.com",
+        username="analysis_final_user",
+        password="secret123",
+    )
+
+    response = client.post(
+        "/api/v1/analysis/run",
+        data={
+            "resume_text": "Jane Doe\nBackend Engineer\nSkills: Python, FastAPI, PostgreSQL\nProjects: ResumeCopilot",
+            "job_description_text": "Hiring backend engineer with Python, FastAPI, PostgreSQL, Docker.",
+            "rewrite_style": "technical",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["final_report"] is not None
+    assert "summary" in data["final_report"]
+    assert "rewritten_bullets" in data["final_report"]
+    assert "interview_questions" in data["final_report"]    

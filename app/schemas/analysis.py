@@ -25,6 +25,33 @@ class GapAnalysisReport(BaseModel):
     scoring_notes: str | None = None
 
 
+class ImprovementReport(BaseModel):
+    rewrite_style: Literal["concise", "technical", "achievement-focused"] = "concise"
+    summary: str
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    rewritten_bullets: list[str] = Field(default_factory=list)
+    ats_keywords: list[str] = Field(default_factory=list)
+    role_fit_feedback: str
+    interview_questions: list[str] = Field(default_factory=list)
+    action_plan: list[str] = Field(default_factory=list)
+
+
+class FinalAnalysisReport(BaseModel):
+    candidate_name: str | None = None
+    inferred_seniority: Literal["student", "junior", "mid-level", "senior", "unknown"] = "unknown"
+    match_score: int = Field(..., ge=0, le=100)
+    summary: str
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    rewritten_bullets: list[str] = Field(default_factory=list)
+    ats_keywords: list[str] = Field(default_factory=list)
+    role_fit_feedback: str
+    interview_questions: list[str] = Field(default_factory=list)
+    action_plan: list[str] = Field(default_factory=list)
+    scoring_notes: str | None = None
+
+
 class ResumeExtractionResponse(BaseModel):
     resume_source: str
     resume_filename: str | None = None
@@ -38,3 +65,4 @@ class ResumeExtractionResponse(BaseModel):
 
     candidate_profile: CandidateProfile | None = None
     gap_analysis: GapAnalysisReport | None = None
+    final_report: FinalAnalysisReport | None = None
