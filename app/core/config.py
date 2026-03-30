@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    MAX_UPLOAD_SIZE_BYTES: int = 2 * 1024 * 1024
+    ALLOWED_RESUME_EXTENSIONS: str = ".pdf,.docx,.txt"
+
     @property
     def database_url(self) -> str:
         return (
@@ -31,6 +34,14 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+
+    @property
+    def allowed_resume_extensions(self) -> set[str]:
+        return {
+            ext.strip().lower()
+            for ext in self.ALLOWED_RESUME_EXTENSIONS.split(",")
+            if ext.strip()
+        }
 
     model_config = SettingsConfigDict(
         env_file=".env",
