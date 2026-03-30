@@ -51,8 +51,32 @@ def test_analysis_run_with_raw_text() -> None:
 
     assert response.status_code == 200, response.text
     data = response.json()
-    assert data["source"] == "text"
-    assert "John Doe" in data["extracted_text"]
+    assert data["resume_source"] == "text"
+    assert "John Doe" in data["resume_text"]
+
+
+def test_analysis_run_with_raw_text_and_job_description_text() -> None:
+    email, username = unique_identity("analysis_jd_text")
+    token = create_user_and_get_token(
+        email=email,
+        username=username,
+        password="secret123",
+    )
+
+    response = client.post(
+        "/api/v1/analysis/run",
+        data={
+            "resume_text": "Jane Doe\nBackend Engineer\nFastAPI, PostgreSQL",
+            "job_description_text": "We are hiring a backend engineer with FastAPI and Docker experience.",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["resume_source"] == "text"
+    assert data["job_description_source"] == "text"
+    assert "backend engineer" in data["job_description_text"].lower()
 
 
 def test_analysis_run_rejects_missing_input() -> None:
@@ -88,6 +112,28 @@ def test_analysis_run_with_txt_file() -> None:
 
     assert response.status_code == 200, response.text
     data = response.json()
-    assert data["source"] == "file"
-    assert data["filename"] == "resume.txt"
-    assert "Jane Doe" in data["extracted_text"]
+    assert data["resume_source"] == "file"
+    assert data["resume_filename"] == "resume.txt"
+    assert "Jane Doe" in data["resume_text"]
+
+
+def test_analysis_run_rejects_both_job_inputs() -> None:
+    email, username = unique_identity("analysis_both_jd")
+    token = create_user_and_get_token(
+        email=email,
+        username=username,
+        password="secret123",
+    )
+
+    response = client.post(
+        "/api/v1/analysis/run",
+        data={
+            "resume_text": "John Doe\nEngineer",
+            "job_description_text": "Need Python",
+            "job_url": "https://example.com/job",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400, response.text
+    assert response.json()["detail"] == "Provide only one of job_description_text or job_url."
