@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     JOB_FETCH_TIMEOUT_SECONDS: int = 10
     MAX_JOB_DESCRIPTION_CHARS: int = 12000
 
+    OPENAI_API_KEY: str = Field(default="")
+    OPENAI_MODEL: str = Field(default="gpt-4.1-mini")
+
     @property
     def database_url(self) -> str:
         return (
