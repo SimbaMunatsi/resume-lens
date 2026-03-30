@@ -24,6 +24,7 @@ async def run_analysis(
     resume_text: str | None = Form(default=None),
     job_description_text: str | None = Form(default=None),
     job_url: str | None = Form(default=None),
+    rewrite_style: str = Form(default="concise"),
 ) -> ResumeExtractionResponse:
     if resume_file is None and not resume_text:
         raise HTTPException(
@@ -104,6 +105,7 @@ async def run_analysis(
             "job_description_source": job_description_source,
             "job_description_text": normalized_job_description_text,
             "job_url": normalized_job_url,
+            "rewrite_style": rewrite_style,
         }
     )
 
@@ -122,4 +124,5 @@ async def run_analysis(
         job_url=normalized_job_url,
         candidate_profile=graph_result["candidate_profile"],
         gap_analysis=graph_result["gap_analysis"],
+        final_report=graph_result["final_report"],
     )
