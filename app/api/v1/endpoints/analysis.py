@@ -121,4 +121,5 @@ async def run_analysis(
         ),
         job_url=normalized_job_url,
         candidate_profile=graph_result["candidate_profile"],
+        gap_analysis=graph_result["gap_analysis"],
     )
