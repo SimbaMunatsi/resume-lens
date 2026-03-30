@@ -15,6 +15,16 @@ class CandidateProfile(BaseModel):
     missing_sections: list[str] = Field(default_factory=list)
 
 
+class GapAnalysisReport(BaseModel):
+    match_score: int = Field(..., ge=0, le=100)
+    strong_matches: list[str] = Field(default_factory=list)
+    missing_skills: list[str] = Field(default_factory=list)
+    weak_sections: list[str] = Field(default_factory=list)
+    ats_keyword_gaps: list[str] = Field(default_factory=list)
+    top_recommendations: list[str] = Field(default_factory=list)
+    scoring_notes: str | None = None
+
+
 class ResumeExtractionResponse(BaseModel):
     resume_source: str
     resume_filename: str | None = None
@@ -27,3 +37,4 @@ class ResumeExtractionResponse(BaseModel):
     job_url: str | None = None
 
     candidate_profile: CandidateProfile | None = None
+    gap_analysis: GapAnalysisReport | None = None

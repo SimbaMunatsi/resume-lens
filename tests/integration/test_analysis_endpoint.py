@@ -137,3 +137,25 @@ def test_analysis_run_rejects_both_job_inputs() -> None:
 
     assert response.status_code == 400, response.text
     assert response.json()["detail"] == "Provide only one of job_description_text or job_url."
+
+def test_analysis_run_returns_gap_analysis() -> None:
+    token = create_user_and_get_token(
+        email="analysis_gap@example.com",
+        username="analysis_gap_user",
+        password="secret123",
+    )
+
+    response = client.post(
+        "/api/v1/analysis/run",
+        data={
+            "resume_text": "Jane Doe\nBackend Engineer\nSkills: Python, FastAPI, PostgreSQL\nProjects: ResumeCopilot",
+            "job_description_text": "Hiring backend engineer with Python, FastAPI, PostgreSQL, Docker.",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["candidate_profile"] is not None
+    assert data["gap_analysis"] is not None
+    assert "match_score" in data["gap_analysis"]    
