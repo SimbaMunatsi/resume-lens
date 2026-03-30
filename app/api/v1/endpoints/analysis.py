@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.api.deps import get_current_user
+from app.graph.workflow import build_resume_analysis_graph
 from app.models.user import User
 from app.schemas.analysis import ResumeExtractionResponse
 from app.tools.job_fetcher import JobFetchError, fetch_job_description_text
@@ -8,6 +9,8 @@ from app.tools.resume_extractor import ResumeExtractionError, extract_resume_tex
 from app.tools.text_cleaner import clean_text
 
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
+
+resume_analysis_graph = build_resume_analysis_graph()
 
 
 @router.post(
@@ -22,7 +25,6 @@ async def run_analysis(
     job_description_text: str | None = Form(default=None),
     job_url: str | None = Form(default=None),
 ) -> ResumeExtractionResponse:
-    # Validate resume input
     if resume_file is None and not resume_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,14 +37,12 @@ async def run_analysis(
             detail="Provide only one of resume_file or resume_text.",
         )
 
-    # Validate JD input
     if job_description_text and job_url:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Provide only one of job_description_text or job_url.",
         )
 
-    # Resume extraction
     if resume_file is not None:
         file_bytes = await resume_file.read()
 
@@ -70,7 +70,6 @@ async def run_analysis(
         resume_source = "text"
         resume_filename = None
 
-    # Job description extraction
     normalized_job_description_text: str | None = None
     job_description_source: str | None = None
     normalized_job_url: str | None = None
@@ -96,6 +95,18 @@ async def run_analysis(
         job_description_source = "url"
         normalized_job_url = job_url
 
+    graph_result = resume_analysis_graph.invoke(
+        {
+            "user_id": current_user.id,
+            "resume_source": resume_source,
+            "resume_filename": resume_filename,
+            "resume_text": normalized_resume_text,
+            "job_description_source": job_description_source,
+            "job_description_text": normalized_job_description_text,
+            "job_url": normalized_job_url,
+        }
+    )
+
     return ResumeExtractionResponse(
         resume_source=resume_source,
         resume_filename=resume_filename,
@@ -109,4 +120,5 @@ async def run_analysis(
             else None
         ),
         job_url=normalized_job_url,
+        candidate_profile=graph_result["candidate_profile"],
     )
