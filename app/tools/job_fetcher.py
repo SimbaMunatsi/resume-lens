@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from urllib.parse import urlparse
 
 import requests
@@ -22,28 +23,44 @@ def validate_job_url(url: str) -> None:
 def fetch_job_page(url: str) -> str:
     validate_job_url(url)
 
-    try:
-        response = requests.get(
-            url,
-            timeout=settings.JOB_FETCH_TIMEOUT_SECONDS,
-            headers={
-                "User-Agent": (
-                    "ResumeCopilot/0.1 "
-                    "(Job Description Fetcher for educational portfolio project)"
-                )
-            },
-        )
-        response.raise_for_status()
-    except requests.Timeout as exc:
-        raise JobFetchError("Job URL fetch timed out.") from exc
-    except requests.RequestException as exc:
-        raise JobFetchError("Failed to fetch job URL.") from exc
+    last_error: Exception | None = None
 
-    content_type = response.headers.get("Content-Type", "").lower()
-    if "text/html" not in content_type and "application/xhtml+xml" not in content_type:
-        raise JobFetchError("Job URL did not return an HTML page.")
+    for attempt in range(2):
+        try:
+            response = requests.get(
+                url,
+                timeout=settings.JOB_FETCH_TIMEOUT_SECONDS,
+                headers={
+                    "User-Agent": (
+                        "ResumeCopilot/0.1 "
+                        "(Job Description Fetcher for educational portfolio project)"
+                    )
+                },
+            )
+            response.raise_for_status()
 
-    return response.text
+            content_type = response.headers.get("Content-Type", "").lower()
+            if "text/html" not in content_type and "application/xhtml+xml" not in content_type:
+                raise JobFetchError("Job URL did not return an HTML page.")
+
+            return response.text
+
+        except requests.Timeout as exc:
+            last_error = exc
+            if attempt == 0:
+                time.sleep(0.2)
+                continue
+            raise JobFetchError("Job URL fetch timed out.") from exc
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt == 0:
+                time.sleep(0.2)
+                continue
+            raise JobFetchError("Failed to fetch job URL.") from exc
+        except JobFetchError:
+            raise
+
+    raise JobFetchError("Failed to fetch job URL.") from last_error
 
 
 def extract_job_text_from_html(html: str) -> str:

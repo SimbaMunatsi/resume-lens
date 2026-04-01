@@ -1,11 +1,5 @@
 from uuid import uuid4
 
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-client = TestClient(app)
-
 
 def unique_user_payload(prefix: str = "user") -> dict:
     unique = uuid4().hex[:8]
@@ -16,7 +10,7 @@ def unique_user_payload(prefix: str = "user") -> dict:
     }
 
 
-def test_register_user() -> None:
+def test_register_user(client) -> None:
     payload = unique_user_payload("testuser")
 
     response = client.post("/api/v1/auth/register", json=payload)
@@ -29,7 +23,7 @@ def test_register_user() -> None:
     assert "hashed_password" not in data
 
 
-def test_login_user() -> None:
+def test_login_user(client) -> None:
     register_payload = unique_user_payload("loginuser")
 
     register_response = client.post("/api/v1/auth/register", json=register_payload)
@@ -49,7 +43,7 @@ def test_login_user() -> None:
     assert data["token_type"] == "bearer"
 
 
-def test_protected_route_with_valid_token() -> None:
+def test_protected_route_with_valid_token(client) -> None:
     register_payload = unique_user_payload("protecteduser")
 
     register_response = client.post("/api/v1/auth/register", json=register_payload)
@@ -77,7 +71,7 @@ def test_protected_route_with_valid_token() -> None:
     assert register_payload["email"] in data["message"]
 
 
-def test_protected_route_with_invalid_token() -> None:
+def test_protected_route_with_invalid_token(client) -> None:
     response = client.get(
         "/api/v1/protected-health",
         headers={"Authorization": "Bearer invalid-token"},
