@@ -1,27 +1,39 @@
-from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
+from sqlalchemy import text
 
-from app.api.v1.endpoints.auth import router as auth_router
-from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.api import api_router
+from app.core.config import settings
+from app.core.logging import setup_logging
+from app.db.session import engine
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # startup logic
-    # e.g. load settings, warm caches, initialize services
-    yield
-    # shutdown logic
-    # e.g. cleanup resources
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        debug=settings.DEBUG,
+    )
+
+    app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+    @app.on_event("startup")
+    def startup_event() -> None:
+        logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
+
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+            logger.info("Database connection check passed.")
+        except Exception:
+            logger.exception("Database connection check failed.")
+            raise
+
+    return app
 
 
-app = FastAPI(
-    title="Resume Lens API",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(health_router, prefix="/api/v1")
-app.include_router(api_router, prefix="/api/v1")
+app = create_app()

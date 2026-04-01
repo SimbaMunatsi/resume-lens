@@ -1,4 +1,5 @@
-from typing import Literal
+from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -66,3 +67,34 @@ class ResumeExtractionResponse(BaseModel):
     candidate_profile: CandidateProfile | None = None
     gap_analysis: GapAnalysisReport | None = None
     final_report: FinalAnalysisReport | None = None
+
+
+class AnalysisHistoryItem(BaseModel):
+    id: int
+    resume_filename: str | None = None
+    target_role: str | None = None
+    rewrite_style: str | None = None
+    match_score: int | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SavedReportResponse(BaseModel):
+    analysis_id: int
+    final_report: FinalAnalysisReport
+    created_at: datetime
+
+
+class UserPreferenceResponse(BaseModel):
+    preferred_rewrite_style: str | None = None
+    preferred_target_roles: list[str] = Field(default_factory=list)
+    common_skill_gaps: list[str] = Field(default_factory=list)
+    last_analysis_summary: dict[str, Any] | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class UserPreferenceUpdateRequest(BaseModel):
+    preferred_rewrite_style: Literal["concise", "technical", "achievement-focused"] | None = None
+    preferred_target_roles: list[str] | None = None
