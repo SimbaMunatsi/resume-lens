@@ -1,9 +1,13 @@
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.db.session import get_db
 from app.graph.workflow import build_resume_analysis_graph
 from app.models.user import User
-from app.schemas.analysis import ResumeExtractionResponse
+from app.repositories.analysis import get_analysis_history_for_user
+from app.schemas.analysis import AnalysisHistoryItem, ResumeExtractionResponse
+from app.services.memory_service import load_user_preferences, persist_analysis_run
 from app.tools.job_fetcher import JobFetchError, fetch_job_description_text
 from app.tools.resume_extractor import ResumeExtractionError, extract_resume_text
 from app.tools.text_cleaner import clean_text
@@ -20,11 +24,13 @@ resume_analysis_graph = build_resume_analysis_graph()
 )
 async def run_analysis(
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     resume_file: UploadFile | None = File(default=None),
     resume_text: str | None = Form(default=None),
     job_description_text: str | None = Form(default=None),
     job_url: str | None = Form(default=None),
-    rewrite_style: str = Form(default="concise"),
+    rewrite_style: str | None = Form(default=None),
+    target_role: str | None = Form(default=None),
 ) -> ResumeExtractionResponse:
     if resume_file is None and not resume_text:
         raise HTTPException(
@@ -43,6 +49,9 @@ async def run_analysis(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Provide only one of job_description_text or job_url.",
         )
+
+    preference = load_user_preferences(db, current_user.id)
+    effective_rewrite_style = rewrite_style or preference.preferred_rewrite_style or "concise"
 
     if resume_file is not None:
         file_bytes = await resume_file.read()
@@ -105,8 +114,24 @@ async def run_analysis(
             "job_description_source": job_description_source,
             "job_description_text": normalized_job_description_text,
             "job_url": normalized_job_url,
-            "rewrite_style": rewrite_style,
+            "rewrite_style": effective_rewrite_style,
         }
+    )
+
+    persist_analysis_run(
+        db,
+        user_id=current_user.id,
+        resume_filename=resume_filename,
+        resume_source=resume_source,
+        resume_text=normalized_resume_text,
+        job_description_source=job_description_source,
+        job_description_text=normalized_job_description_text,
+        job_url=normalized_job_url,
+        target_role=target_role,
+        rewrite_style=effective_rewrite_style,
+        candidate_profile=graph_result["candidate_profile"],
+        gap_analysis=graph_result["gap_analysis"],
+        final_report=graph_result["final_report"],
     )
 
     return ResumeExtractionResponse(
@@ -126,3 +151,27 @@ async def run_analysis(
         gap_analysis=graph_result["gap_analysis"],
         final_report=graph_result["final_report"],
     )
+
+
+@router.get("/history", response_model=list[AnalysisHistoryItem])
+def get_analysis_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[AnalysisHistoryItem]:
+    analyses = get_analysis_history_for_user(db, current_user.id)
+
+    items: list[AnalysisHistoryItem] = []
+    for analysis in analyses:
+        match_score = analysis.report.match_score if analysis.report else None
+        items.append(
+            AnalysisHistoryItem(
+                id=analysis.id,
+                resume_filename=analysis.resume_filename,
+                target_role=analysis.target_role,
+                rewrite_style=analysis.rewrite_style,
+                match_score=match_score,
+                created_at=analysis.created_at,
+            )
+        )
+
+    return items

@@ -9,6 +9,13 @@ from app.core.config import settings
 from app.db.base import Base
 from app.models.user import User  # noqa: F401
 
+from app.models.analysis import Analysis  # noqa: E402, F401
+from app.models.report import Report  # noqa: E402, F401
+from app.models.user import User  # noqa: E402, F401
+from app.models.user_preference import UserPreference  # noqa: E402, F401
+from app.models.analysis_memory import AnalysisMemory  # noqa: E402, F401
+
+
 
 config = context.config
 
