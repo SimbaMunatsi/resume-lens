@@ -1,6 +1,13 @@
 # ResumeLens
-
 AI-powered resume analysis and improvement platform built with **FastAPI**, **LangGraph**, **Streamlit**, and **PostgreSQL**.
+
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-green)
+![LangGraph](https://img.shields.io/badge/LangGraph-agent%20workflow-purple)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-demo%20UI-red)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 
 ResumeLens analyzes a resume alongside an optional target job description, then converts the result into a structured improvement workflow. It extracts candidate signals, identifies skill and ATS gaps, rewrites weak content, generates interview preparation prompts, and stores report history and user preferences for future runs.
 
@@ -300,7 +307,7 @@ tests/
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/SimbaMunatsi/resume-lens.git
 cd resume-lens
 ```
 
@@ -333,15 +340,33 @@ Create a `.env` file and define the required values.
 Example:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+APP_NAME=resume-lens
+APP_VERSION=0.1.0
+API_V1_PREFIX=/api/v1
+DEBUG=True
+
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_SERVER=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=resume_lens
-SECRET_KEY=your_secret_key
+
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/resume_lens
+
+LOG_LEVEL=INFO
+
+SECRET_KEY=your secret key here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+MAX_UPLOAD_SIZE_BYTES=2097152
+ALLOWED_RESUME_EXTENSIONS=.pdf,.docx,.txt
+
+JOB_FETCH_TIMEOUT_SECONDS=10
+MAX_JOB_DESCRIPTION_CHARS=12000
+
+OPENAI_API_KEY=your key here
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 ### 5. Run Database Migrations
@@ -622,6 +647,13 @@ That combination makes it a strong portfolio project for:
 - full-stack AI product development
 
 ---
+
+## Author
+Simbarashe Munatsi
+
+### Contacts
+Email : vsmunatsi@gmai.com
+LinkedIn : https://www.linkedin.com/in/victor-simbarashe-munatsi/
 
 ## License
 
