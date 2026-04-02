@@ -1,113 +1,184 @@
-# ResumeCopilot
+# ResumeLens
 
-An AI-powered resume analyzer built with **FastAPI**, **LangGraph**, and **PostgreSQL**.
+AI-powered resume analysis and improvement platform built with **FastAPI**, **LangGraph**, **Streamlit**, and **PostgreSQL**.
 
-ResumeCopilot takes a resume plus an optional target job description, then:
-
-- parses the resume into a structured candidate profile
-- compares the profile against the target role
-- identifies strengths and gaps
-- rewrites weak content
-- suggests ATS keywords
-- generates interview questions
-- stores report history and user preferences for future runs
+ResumeLens analyzes a resume alongside an optional target job description, then converts the result into a structured improvement workflow. It extracts candidate signals, identifies skill and ATS gaps, rewrites weak content, generates interview preparation prompts, and stores report history and user preferences for future runs.
 
 ---
 
-## Why this project matters
+## Table of Contents
 
-This project demonstrates practical **agentic AI backend engineering** in a realistic but manageable scope.
-
-It shows:
-
-- multi-step agent orchestration with **LangGraph**
-- structured LLM output with **Pydantic**
-- external tool integration for resume parsing and job description fetching
-- memory design with short-term workflow state and long-term PostgreSQL persistence
-- production-style FastAPI architecture
-- authentication, history, preferences, logging, and Docker packaging
-
-This is not a toy chatbot. It is a backend system designed to look and behave like a modern AI application.
+- [Overview](#overview)
+- [Why This Project Matters](#why-this-project-matters)
+- [Core Features](#core-features)
+- [Architecture](#architecture)
+- [Mermaid Diagram](#mermaid-diagram)
+- [Agent Workflow](#agent-workflow)
+- [Tools](#tools)
+- [Memory Design](#memory-design)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Running the Application](#running-the-application)
+- [GitHub Pages](#github-pages)
+- [API Endpoints](#api-endpoints)
+- [Sample Request](#sample-request)
+- [Sample Response](#sample-response)
+- [Testing](#testing)
+- [Production-Oriented Engineering Choices](#production-oriented-engineering-choices)
+- [Current Scope](#current-scope)
+- [Roadmap](#roadmap)
+- [Why ResumeLens Is Portfolio-Worthy](#why-resumelens-is-portfolio-worthy)
+- [License](#license)
 
 ---
 
-## Core features
+## Overview
 
-- Resume upload support for **PDF**, **DOCX**, and **TXT**
-- Direct pasted resume text support
+ResumeLens is a backend-first AI application for resume analysis, gap detection, and resume improvement.
+
+At a high level, the system:
+
+- ingests resume content from **text**, **PDF**, **DOCX**, or **TXT**
+- accepts an optional job description via **pasted text** or **public job URL**
+- extracts a structured candidate profile
+- performs deterministic and agent-assisted gap analysis
+- generates rewritten resume bullets and improvement guidance
+- stores analysis history and report artifacts
+- remembers user preferences across runs
+- exposes a FastAPI API and a Streamlit interface
+
+ResumeLens is designed to feel like a realistic product workflow rather than a single-endpoint LLM demo.
+
+---
+
+## Why This Project Matters
+
+ResumeLens demonstrates practical **AI backend engineering** using modern application patterns:
+
+- **agent orchestration** with LangGraph
+- **structured outputs** enforced through Pydantic schemas
+- **tool integration** for resume parsing and job description fetching
+- **persistent memory** using PostgreSQL-backed analysis and preferences
+- **authentication and protected workflows**
+- **production-style API design**, logging, and exception handling
+- **dual interface model** with FastAPI backend and Streamlit frontend
+
+This project is intentionally built as a system, not just a prompt wrapper.
+
+---
+
+## Core Features
+
+- Resume ingestion from:
+  - pasted text
+  - `.txt`
+  - `.pdf`
+  - `.docx`
 - Optional job description input via:
   - pasted text
   - public job URL
-- 3-agent LangGraph workflow:
-  - Resume Parsing Agent
-  - Gap Analysis Agent
-  - Improvement Agent
+- Multi-step LangGraph analysis flow
 - Structured candidate profile extraction
 - Deterministic job match scoring
-- ATS keyword gap detection
-- Resume bullet rewriting with style modes:
-  - concise
-  - technical
-  - achievement-focused
+- Gap analysis with:
+  - strong matches
+  - missing skills
+  - weak sections
+  - ATS keyword gaps
+- Resume improvement generation
+- Bullet rewriting with style modes:
+  - `concise`
+  - `technical`
+  - `achievement-focused`
 - Interview question generation
+- Historical improvement tracking across runs
 - Analysis history persistence
 - User preference memory
 - JWT authentication
-- Dockerized local development setup
+- Streamlit UI for interactive usage
+- GitHub Pages support for project documentation and demo pages
 
 ---
 
 ## Architecture
 
-### High-level system diagram
+### High-Level Architecture
 
 ```text
 User
-  |
-  v
-FastAPI API Layer
-  |
-  v
-Analysis Service
-  |
-  v
-LangGraph Workflow
-  ├── Parse Resume Node
-  ├── Gap Analysis Node
-  └── Improvement Node
-  |
-  v
-Persistence Layer
-  ├── Analysis
-  ├── Report
-  └── UserPreference
-  |
-  v
-PostgreSQL
-```
-
-### Agent workflow diagram
-
-```text
-Input
-  -> Resume Extraction Tool
-  -> Job Description Fetch Tool (optional)
-  -> Parse Resume Agent
-  -> Gap Analysis Agent
-  -> Improvement Agent
-  -> Final Report Assembly
-  -> Save Analysis + Report + Preferences
+  ├── Streamlit UI
+  └── API Consumer
+          |
+          v
+     FastAPI API Layer
+          |
+          v
+     Analysis Service
+          |
+          v
+     LangGraph Workflow
+      ├── Candidate Profile Agent
+      ├── Gap Analysis Agent
+      └── Improvement Agent
+          |
+          v
+     Persistence Layer
+      ├── User
+      ├── Analysis
+      ├── Report
+      └── UserPreference
+          |
+          v
+      PostgreSQL
 ```
 
 ---
 
-## Agent workflow
+## Mermaid Diagram
 
-### 1. Resume Parsing & Profiling Agent
-Converts raw resume text into a structured candidate profile.
+```mermaid
+flowchart TD
+    A[User] --> B[Streamlit UI]
+    A --> C[FastAPI API Consumer]
 
-Outputs include:
-- name
+    B --> D[FastAPI Backend]
+    C --> D
+
+    D --> E[Auth Layer]
+    D --> F[Analysis Endpoint]
+    D --> G[History / Reports / Preferences]
+
+    F --> H[Resume Extraction Tool]
+    F --> I[Job Description Fetch Tool]
+    F --> J[LangGraph Workflow]
+
+    J --> K[Candidate Profile Agent]
+    J --> L[Gap Analysis Agent]
+    J --> M[Improvement Agent]
+
+    K --> N[Structured Candidate Profile]
+    L --> O[Gap Analysis Report]
+    M --> P[Final Improvement Report]
+
+    N --> Q[Analysis Service]
+    O --> Q
+    P --> Q
+
+    Q --> R[(PostgreSQL)]
+    G --> R
+    E --> R
+```
+
+---
+
+## Agent Workflow
+
+### 1. Candidate Profile Extraction
+Transforms raw resume content into a structured profile.
+
+Typical outputs:
+- candidate name
 - contact links
 - education
 - skills
@@ -116,21 +187,21 @@ Outputs include:
 - inferred seniority
 - missing sections
 
-### 2. Job Match & Gap Analysis Agent
-Compares the candidate profile against the target job description.
+### 2. Gap Analysis
+Compares the candidate profile against a target role or job description.
 
-Outputs include:
+Typical outputs:
 - match score
 - strong matches
 - missing skills
 - weak sections
 - ATS keyword gaps
-- recommendations
+- prioritized recommendations
 
-### 3. Resume Improvement Agent
-Turns the analysis into actionable improvements.
+### 3. Resume Improvement
+Converts the analysis into actionable resume-improvement output.
 
-Outputs include:
+Typical outputs:
 - rewritten bullets
 - ATS keywords
 - role-fit feedback
@@ -139,154 +210,220 @@ Outputs include:
 
 ---
 
-## Tools used
+## Tools
 
 ### Resume Extraction Tool
 Supports:
-- PDF via `pypdf`
-- DOCX via `python-docx`
-- TXT via UTF-8 decoding
+- **PDF** via `pypdf`
+- **DOCX** via `python-docx`
+- **TXT** via UTF-8 decoding
 
 ### Job Description Fetch Tool
-Fetches and parses public HTML job pages using:
+Fetches public job pages using:
 - `requests`
 - `beautifulsoup4`
 
 ### Skill Normalization Tool
-Normalizes skill aliases such as:
-- `Postgres` -> `PostgreSQL`
-- `fast api` -> `FastAPI`
-- `js` -> `JavaScript`
+Normalizes related aliases into consistent skill labels.
+
+Examples:
+- `Postgres` → `PostgreSQL`
+- `fast api` → `FastAPI`
+- `js` → `JavaScript`
 
 ---
 
-## Memory design
+## Memory Design
 
-### Short-term memory
-Short-term workflow memory is handled through **LangGraph state** during a single analysis run.
+### Short-Term Memory
+Short-term workflow state is handled inside the analysis pipeline during a single run.
 
-This stores:
+This includes:
 - normalized resume text
 - normalized job description text
 - candidate profile
 - gap analysis
-- improvement report
 - final report
 
-### Long-term memory
-Long-term memory is stored in **PostgreSQL** tables.
+### Long-Term Memory
+Long-term memory is stored in PostgreSQL.
 
-This stores:
+This includes:
 - past analyses
 - saved reports
 - preferred rewrite style
 - preferred target roles
-- common skill gaps
-- last analysis summary
+- reusable historical context for improvement tracking
 
-This allows the system to reuse stored preferences in future runs.
+This allows ResumeLens to support repeat usage instead of isolated one-off analysis sessions.
 
 ---
 
-## Tech stack
+## Tech Stack
 
 - **FastAPI**
+- **Streamlit**
 - **LangGraph**
 - **LangChain / OpenAI**
 - **PostgreSQL**
 - **SQLAlchemy**
 - **Alembic**
 - **Pytest**
-- **Docker / Docker Compose**
 
 ---
 
-## Project structure
+## Project Structure
 
 ```text
 app/
-├── agents/         # LangGraph agent logic
-├── api/            # FastAPI endpoints and dependencies
-├── core/           # config, logging, security
-├── db/             # database session and metadata base
+├── agents/         # agent logic for profiling, gap analysis, and improvement
+├── api/            # FastAPI routers, dependencies, and versioned endpoints
+├── core/           # config, logging, security, and shared application settings
+├── db/             # database engine, session management, metadata base
 ├── graph/          # workflow state, nodes, and graph assembly
-├── llm/            # provider and prompts
-├── models/         # SQLAlchemy models
+├── llm/            # LLM client setup and prompts
+├── models/         # SQLAlchemy persistence models
 ├── repositories/   # database access layer
-├── schemas/        # Pydantic request/response models
-├── services/       # orchestration and report services
-└── tools/          # extraction, fetching, normalization utilities
+├── schemas/        # Pydantic request and response contracts
+├── services/       # orchestration and business logic
+└── tools/          # parsing, fetching, cleaning, and normalization utilities
+
+tests/
+├── integration/
+└── unit/
 ```
 
 ---
 
-## Setup instructions
+## Getting Started
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone <your-repo-url>
-cd resume-copilot
+cd resume-lens
 ```
 
-### 2. Create environment file
+### 2. Create and Activate a Virtual Environment
+
+#### Windows
 
 ```bash
-cp .env.example .env
+python -m venv venv
+venv\Scripts\activate
 ```
 
-Update `.env` with your actual values, especially:
+#### Linux / macOS
 
-```env
-OPENAI_API_KEY=your_openai_api_key_here
+```bash
+python -m venv venv
+source venv/bin/activate
 ```
 
-### 3. Run locally
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+
+Create a `.env` file and define the required values.
+
+Example:
+
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=resume_lens
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+```
+
+### 5. Run Database Migrations
+
+```bash
 alembic upgrade head
+```
+
+---
+
+## Running the Application
+
+ResumeLens currently runs as two local processes.
+
+### Start the FastAPI backend
+
+```bash
 uvicorn app.main:app --reload
 ```
 
-App will start at:
+Backend base URL:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Swagger docs:
+OpenAPI docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
----
-
-## Docker usage
-
-### Start app and database
+### Start the Streamlit frontend
 
 ```bash
-docker-compose up --build
+streamlit run streamlit_app.py
 ```
 
-### Stop services
+By default, the Streamlit app targets:
 
-```bash
-docker-compose down
-```
-
-### Reset containers and volumes
-
-```bash
-docker-compose down -v
-docker-compose up --build
+```text
+http://localhost:8000/api/v1
 ```
 
 ---
 
-## API endpoints
+## GitHub Pages
+
+GitHub Pages can be used as a lightweight documentation or portfolio site for ResumeLens.
+
+Recommended content for your GitHub Pages site:
+- project overview
+- architecture explanation
+- screenshots of the Streamlit UI
+- demo video link
+- feature highlights
+- setup instructions
+- repository link
+
+### Suggested documentation structure
+
+```text
+docs/
+├── index.md
+├── architecture.md
+├── screenshots/
+└── assets/
+```
+
+### Basic setup
+
+1. Create a `docs/` folder in the repository.
+2. Add your documentation pages, starting with `docs/index.md`.
+3. In GitHub repository settings, enable **GitHub Pages**.
+4. Set the source to:
+   - **Deploy from a branch**
+   - branch: `main`
+   - folder: `/docs`
+
+---
+
+## API Endpoints
 
 ### Auth
 - `POST /api/v1/auth/register`
@@ -299,7 +436,7 @@ docker-compose up --build
 ### Reports
 - `GET /api/v1/reports/{analysis_id}`
 
-### Memory
+### Memory / Preferences
 - `GET /api/v1/memory/preferences`
 - `PATCH /api/v1/memory/preferences`
 
@@ -308,9 +445,9 @@ docker-compose up --build
 
 ---
 
-## Sample request
+## Sample Request
 
-### Register
+### Register User
 
 ```json
 {
@@ -320,7 +457,7 @@ docker-compose up --build
 }
 ```
 
-### Run analysis
+### Run Analysis
 
 This endpoint accepts `multipart/form-data`.
 
@@ -330,13 +467,13 @@ Example fields:
 - `rewrite_style`
 - `target_role`
 
-Example values:
+Example payload:
 
 ```text
 resume_text=Jane Doe
 Backend Engineer
 Skills: Python, FastAPI, PostgreSQL
-Projects: ResumeCopilot
+Projects: ResumeLens
 
 job_description_text=Hiring backend engineer with Python, FastAPI, PostgreSQL, Docker.
 
@@ -346,14 +483,14 @@ target_role=Backend Engineer
 
 ---
 
-## Sample response
+## Sample Response
 
 ```json
 {
   "resume_source": "text",
   "resume_filename": null,
-  "resume_text": "Jane Doe\nBackend Engineer\nSkills: Python, FastAPI, PostgreSQL\nProjects: ResumeCopilot",
-  "resume_char_count": 88,
+  "resume_text": "Jane Doe\nBackend Engineer\nSkills: Python, FastAPI, PostgreSQL\nProjects: ResumeLens",
+  "resume_char_count": 84,
   "job_description_source": "text",
   "job_description_text": "Hiring backend engineer with Python, FastAPI, PostgreSQL, Docker.",
   "job_description_char_count": 67,
@@ -364,7 +501,7 @@ target_role=Backend Engineer
     "experience_summary": "Backend-focused engineer with API and database experience.",
     "education": [],
     "skills": ["Python", "FastAPI", "PostgreSQL"],
-    "projects": ["ResumeCopilot"],
+    "projects": ["ResumeLens"],
     "certifications": [],
     "inferred_seniority": "mid-level",
     "missing_sections": []
@@ -411,54 +548,81 @@ target_role=Backend Engineer
 
 ## Testing
 
-Run all tests:
+Run the full test suite:
 
 ```bash
 pytest -q
 ```
 
-The project includes:
+The test suite includes:
 - unit tests for tools and agents
-- integration tests for analysis, reports, and auth-protected access
+- integration tests for auth, analysis, reports, and protected routes
 
 ---
 
-## Production hardening included
+## Production-Oriented Engineering Choices
 
 - structured request logging
-- graph node execution logging
 - centralized exception handling
-- controlled failure handling for job URL fetches
-- service/repository separation
-- JWT-protected endpoints
-- persisted report history
-- reusable user preferences
+- protected JWT endpoints
+- deterministic scoring alongside LLM-driven reasoning
+- repository and service separation
+- persistent analysis and report history
+- preference memory for repeated use
+- test coverage across unit and integration layers
 
 ---
 
-## Future improvements
+## Current Scope
+
+This version intentionally does **not** include:
+- Docker
+- Docker Compose
+- Makefile-based task automation
+
+The project currently runs locally with:
+
+```bash
+uvicorn app.main:app --reload
+streamlit run streamlit_app.py
+```
+
+---
+
+## Roadmap
 
 - downloadable PDF report export
-- richer job description parsing heuristics
-- async background processing
-- Redis-backed graph checkpointing
-- report comparison across multiple analysis runs
-- frontend dashboard
+- richer job-description parsing heuristics
+- stronger evaluation coverage for parsing and scoring quality
+- background job processing for longer analyses
+- richer historical comparison views
 - cloud deployment pipeline
-- evaluation suite for parser and report quality
+- stronger GitHub Pages documentation site
+- additional UI polish for the Streamlit interface
 
 ---
 
-## Why this repo is portfolio-worthy
+## Why ResumeLens Is Portfolio-Worthy
 
-This project demonstrates more than just calling an LLM API.
+ResumeLens demonstrates more than simply calling an LLM API.
 
 It shows:
-- real backend structure
-- agent orchestration
-- structured model outputs
-- persistence and memory
-- production-style packaging
-- practical business value
+- backend-first AI system design
+- agent orchestration with typed outputs
+- realistic tool integration
+- memory and persistence
+- authentication and protected workflows
+- structured testing
+- a usable UI layer on top of a production-style API
 
-That combination is what makes it a strong portfolio project for AI backend or agentic AI engineering roles.
+That combination makes it a strong portfolio project for:
+- AI backend engineering
+- agentic AI systems
+- LLM application engineering
+- full-stack AI product development
+
+---
+
+## License
+
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
