@@ -563,7 +563,7 @@ The test suite includes:
 
 ## Current Scope
 
-This version intentionally does **not** include:
+Future improvements will include:
 - Docker
 - Docker Compose
 - Makefile-based task automation
