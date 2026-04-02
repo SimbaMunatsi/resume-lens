@@ -50,3 +50,14 @@ def get_analysis_by_id_for_user(db: Session, analysis_id: int, user_id: int) -> 
         Analysis.user_id == user_id,
     )
     return db.scalar(stmt)
+
+
+def get_latest_previous_analysis_for_user(db: Session, user_id: int) -> Analysis | None:
+    stmt = (
+        select(Analysis)
+        .options(selectinload(Analysis.report))
+        .where(Analysis.user_id == user_id)
+        .order_by(desc(Analysis.created_at))
+        .limit(1)
+    )
+    return db.scalar(stmt)

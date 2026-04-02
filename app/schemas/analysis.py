@@ -53,6 +53,20 @@ class FinalAnalysisReport(BaseModel):
     scoring_notes: str | None = None
 
 
+class HistoricalImprovementReport(BaseModel):
+    previous_analysis_id: int | None = None
+    current_analysis_id: int | None = None
+    score_change: int | None = None
+    previous_match_score: int | None = None
+    current_match_score: int | None = None
+    previous_ats_gap_count: int | None = None
+    current_ats_gap_count: int | None = None
+    improved_areas: list[str] = Field(default_factory=list)
+    repeated_weaknesses: list[str] = Field(default_factory=list)
+    resolved_weaknesses: list[str] = Field(default_factory=list)
+    summary: str | None = None
+
+
 class ResumeExtractionResponse(BaseModel):
     resume_source: str
     resume_filename: str | None = None
@@ -67,6 +81,7 @@ class ResumeExtractionResponse(BaseModel):
     candidate_profile: CandidateProfile | None = None
     gap_analysis: GapAnalysisReport | None = None
     final_report: FinalAnalysisReport | None = None
+    historical_improvement: HistoricalImprovementReport | None = None
 
 
 class AnalysisHistoryItem(BaseModel):
