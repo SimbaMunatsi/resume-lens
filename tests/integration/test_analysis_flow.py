@@ -80,3 +80,86 @@ def test_analysis_flow_returns_validation_error(client, auth_headers):
 
     assert response.status_code == 400, response.text
     assert response.json()["detail"] == "Provide either resume_file or resume_text."
+
+
+def test_full_analysis_flow_can_return_historical_improvement(client, monkeypatch):
+    from app.schemas.analysis import (
+        CandidateProfile,
+        FinalAnalysisReport,
+        GapAnalysisReport,
+        HistoricalImprovementReport,
+        ResumeExtractionResponse,
+    )
+
+    def fake_run_full_analysis(**kwargs):
+        response = ResumeExtractionResponse(
+            resume_source="text",
+            resume_filename=None,
+            resume_text="Jane Doe\nPython Developer",
+            resume_char_count=25,
+            job_description_source="text",
+            job_description_text="Backend role with Python and Docker",
+            job_description_char_count=35,
+            job_url=None,
+            candidate_profile=CandidateProfile(
+                name="Jane Doe",
+                skills=["Python", "FastAPI"],
+                projects=["ResumeCopilot"],
+                inferred_seniority="mid-level",
+            ),
+            gap_analysis=GapAnalysisReport(
+                match_score=78,
+                strong_matches=["Python"],
+                missing_skills=["AWS"],
+                weak_sections=["projects"],
+                ats_keyword_gaps=["AWS"],
+                top_recommendations=["Add AWS evidence."],
+                scoring_notes="Improved score.",
+            ),
+            final_report=FinalAnalysisReport(
+                candidate_name="Jane Doe",
+                inferred_seniority="mid-level",
+                match_score=78,
+                summary="Improved fit.",
+                strengths=["Python"],
+                weaknesses=["projects"],
+                rewritten_bullets=["Built backend services using FastAPI."],
+                ats_keywords=["AWS"],
+                role_fit_feedback="Better fit than before.",
+                interview_questions=["How would you use AWS here?"],
+                action_plan=["Add AWS to project evidence."],
+                scoring_notes="Improved score.",
+            ),
+            historical_improvement=HistoricalImprovementReport(
+                previous_analysis_id=10,
+                current_analysis_id=11,
+                score_change=10,
+                previous_match_score=68,
+                current_match_score=78,
+                previous_ats_gap_count=3,
+                current_ats_gap_count=1,
+                improved_areas=["Match score improved from 68 to 78."],
+                repeated_weaknesses=["projects"],
+                resolved_weaknesses=["contact_links"],
+                summary="Match score improved from 68 to 78. ATS keyword coverage improved.",
+            ),
+        )
+        return response, 11
+
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.analysis.run_full_analysis",
+        fake_run_full_analysis,
+    )
+
+    response = client.post(
+        "/api/v1/analysis/run",
+        data={
+            "resume_text": "Jane Doe\nPython Developer",
+            "job_description_text": "Backend role with Python and Docker",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["historical_improvement"] is not None
+    assert data["historical_improvement"]["score_change"] == 10

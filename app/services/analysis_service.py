@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.graph.workflow import build_resume_analysis_graph
 from app.models.user import User
+from app.repositories.analysis import get_latest_previous_analysis_for_user
 from app.schemas.analysis import ResumeExtractionResponse
+from app.services.improvement_tracking_service import build_historical_improvement_report
 from app.services.memory_service import load_user_preferences, persist_analysis_run
 from app.tools.job_fetcher import fetch_job_description_text
 from app.tools.resume_extractor import extract_resume_text
@@ -79,6 +81,8 @@ def run_full_analysis(
     preference = load_user_preferences(db, current_user.id)
     effective_rewrite_style = rewrite_style or preference.preferred_rewrite_style or "concise"
 
+    previous_analysis = get_latest_previous_analysis_for_user(db, current_user.id)
+
     resume_source, normalized_resume_text, resume_filename = _normalize_resume_input(
         resume_file_name=resume_file_name,
         resume_file_bytes=resume_file_bytes,
@@ -134,6 +138,12 @@ def run_full_analysis(
         final_report=graph_result["final_report"],
     )
 
+    historical_improvement = build_historical_improvement_report(
+        previous_analysis=previous_analysis,
+        current_gap_analysis=graph_result["gap_analysis"],
+        current_analysis_id=analysis.id,
+    )
+
     logger.info(
         "analysis_persisted user_id=%s analysis_id=%s match_score=%s",
         current_user.id,
@@ -157,6 +167,7 @@ def run_full_analysis(
         candidate_profile=graph_result["candidate_profile"],
         gap_analysis=graph_result["gap_analysis"],
         final_report=graph_result["final_report"],
+        historical_improvement=historical_improvement,
     )
 
     return response, analysis.id
