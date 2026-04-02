@@ -27,7 +27,6 @@ ResumeLens analyzes a resume alongside an optional target job description, then 
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Running the Application](#running-the-application)
-- [GitHub Pages](#github-pages)
 - [API Endpoints](#api-endpoints)
 - [Sample Request](#sample-request)
 - [Sample Response](#sample-response)
@@ -410,42 +409,6 @@ By default, the Streamlit app targets:
 ```text
 http://localhost:8000/api/v1
 ```
-
----
-
-## GitHub Pages
-
-GitHub Pages can be used as a lightweight documentation or portfolio site for ResumeLens.
-
-Recommended content for your GitHub Pages site:
-- project overview
-- architecture explanation
-- screenshots of the Streamlit UI
-- demo video link
-- feature highlights
-- setup instructions
-- repository link
-
-### Suggested documentation structure
-
-```text
-docs/
-├── index.md
-├── architecture.md
-├── screenshots/
-└── assets/
-```
-
-### Basic setup
-
-1. Create a `docs/` folder in the repository.
-2. Add your documentation pages, starting with `docs/index.md`.
-3. In GitHub repository settings, enable **GitHub Pages**.
-4. Set the source to:
-   - **Deploy from a branch**
-   - branch: `main`
-   - folder: `/docs`
-
 ---
 
 ## API Endpoints
