@@ -82,7 +82,7 @@ def test_analysis_flow_returns_validation_error(client, auth_headers):
     assert response.json()["detail"] == "Provide either resume_file or resume_text."
 
 
-def test_full_analysis_flow_can_return_historical_improvement(client, monkeypatch):
+def test_full_analysis_flow_can_return_historical_improvement(client, auth_headers, monkeypatch):
     from app.schemas.analysis import (
         CandidateProfile,
         FinalAnalysisReport,
@@ -157,9 +157,10 @@ def test_full_analysis_flow_can_return_historical_improvement(client, monkeypatc
             "resume_text": "Jane Doe\nPython Developer",
             "job_description_text": "Backend role with Python and Docker",
         },
+        headers=auth_headers,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
     data = response.json()
     assert data["historical_improvement"] is not None
     assert data["historical_improvement"]["score_change"] == 10

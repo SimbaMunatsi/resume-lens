@@ -486,12 +486,12 @@ def render_preferences_tab() -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="ResumeCopilot",
+        page_title="ResumeLens",
         page_icon="📄",
         layout="wide",
     )
 
-    st.title("ResumeCopilot")
+    st.title("ResumeLens")
     st.caption("AI-powered resume analyzer with LangGraph agents, memory, and persistence.")
 
     with st.sidebar:
