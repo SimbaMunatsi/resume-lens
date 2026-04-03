@@ -281,22 +281,107 @@ This allows ResumeLens to support repeat usage instead of isolated one-off analy
 ## Project Structure
 
 ```text
-app/
-├── agents/         # agent logic for profiling, gap analysis, and improvement
-├── api/            # FastAPI routers, dependencies, and versioned endpoints
-├── core/           # config, logging, security, and shared application settings
-├── db/             # database engine, session management, metadata base
-├── graph/          # workflow state, nodes, and graph assembly
-├── llm/            # LLM client setup and prompts
-├── models/         # SQLAlchemy persistence models
-├── repositories/   # database access layer
-├── schemas/        # Pydantic request and response contracts
-├── services/       # orchestration and business logic
-└── tools/          # parsing, fetching, cleaning, and normalization utilities
-
-tests/
-├── integration/
-└── unit/
+resume-copilot/
+│
+├── app/
+│   ├── api/
+│   │   ├── deps.py
+│   │   └── v1/
+│   │       ├── api.py
+│   │       └── endpoints/
+│   │           ├── auth.py
+│   │           ├── analysis.py
+│   │           ├── reports.py
+│   │           ├── memory.py
+│   │           └── health.py
+│   │
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   ├── logging.py
+│   │   
+│   │
+│   ├── db/
+│   │   ├── base.py
+│   │   ├── session.py
+│   │   
+│   │
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── analysis.py
+│   │   ├── report.py
+│   │   ├── user_preference.py
+│   │   └── analysis_memory.py
+│   │
+│   ├── schemas/
+│   │   ├── auth.py
+│   │   ├── analysis.py
+│   │   
+│   |
+│   │
+│   ├── services/
+│   │   ├── analysis_service.py
+│   │   ├── report_service.py
+|   |   |__ improvement_tracking_service.py
+│   │   └── memory_service.py
+│   │   
+|   |  
+│   ├── agents/
+│   │   ├── parsing_agent.py
+│   │   ├── gap_analysis_agent.py
+│   │   └── improvement_agent.py
+│   │
+│   ├── graph/
+│   │   ├── state.py
+│   │   ├── nodes.py
+│   │   ├── workflow.py
+│   │   
+│   │
+│   ├── tools/
+│   │   ├── resume_extractor.py
+│   │   ├── job_fetcher.py
+│   │   ├── skill_normalizer.py
+│   │   └── text_cleaner.py
+│   │
+│   ├── repositories/
+│   │   ├── preferences.py
+│   │   ├── analysis.py
+│   │   ├── report.py
+│   │   
+│   │
+│   ├── llm/
+│   │   ├── provider.py
+│   │   ├── prompts/
+│   │   │   ├── parsing_prompts.py
+│   │   │   ├── gap_prompts.py
+│   │   │   └── improvement_prompts.py
+│   │
+│   └── main.py
+│
+├── tests/
+│   ├── unit/
+│   │   ├── test_resume_extractor.py
+│   │   ├── test_skill_normalizer.py
+│   │   ├── test_parsing_agent.py
+│   │   ├── test_gap_analysis_agent.py
+|   |   |__ test_improvement_agent.py
+|   |   |__ test_improvement_tracking_service.py
+│   │   └── test_improvement_agent.py
+│   │
+│   ├── integration/
+|   |   |__ test_analysis_endpoint.py
+│   │   ├── test_analysis_flow.py
+│   │   ├── test_auth_endpoints.py
+│   │   └── test_report_endpoints.py
+│   │
+│   └── conftest.py
+│
+├── alembic/
+├── alembic.ini
+├── streamlit_app.py
+├── .env.example
+├── requirements.txt
+└── README.md
 ```
 
 ---
@@ -473,6 +558,8 @@ target_role=Backend Engineer
 
 ## Sample Response
 
+![Candidate_Profile](assets/profile.png)
+
 ```json
 {
   "resume_source": "text",
@@ -530,7 +617,9 @@ target_role=Backend Engineer
     "scoring_notes": "Score based on aligned skills and limited gaps."
   }
 }
+
 ```
+![Gap analysis](assets/gap_analysis.png)
 
 ---
 
@@ -546,7 +635,9 @@ The test suite includes:
 - unit tests for tools and agents
 - integration tests for auth, analysis, reports, and protected routes
 
+![Tests](assets/tests.png)
 ---
+
 
 ## Production-Oriented Engineering Choices
 
