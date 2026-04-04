@@ -15,6 +15,7 @@ ResumeLens analyzes a resume alongside an optional target job description, then 
 
 ## Table of Contents
 
+- [ResumeLens Demo Video](#resumelens-demo-video)
 - [Overview](#overview)
 - [Why This Project Matters](#why-this-project-matters)
 - [Core Features](#core-features)
@@ -38,6 +39,11 @@ ResumeLens analyzes a resume alongside an optional target job description, then 
 - [License](#license)
 
 ---
+
+## ResumeLens Demo Video
+
+A short walkthrough of ResumeLens showing resume upload, gap analysis with provided job description, and how to improve your current resume. 
+https://youtu.be/7OtrqrkBK4s
 
 ## Overview
 
