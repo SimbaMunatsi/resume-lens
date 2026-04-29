@@ -1,4 +1,5 @@
 from __future__ import annotations
+from rapidfuzz import fuzz, process
 
 
 SKILL_ALIASES: dict[str, str] = {
@@ -29,14 +30,93 @@ SKILL_ALIASES: dict[str, str] = {
     "langchain": "LangChain",
     "lang graph": "LangGraph",
     "langgraph": "LangGraph",
+    "team player": "Teamwork",
+    "communication skills": "Communication",
+    "problem solving skills": "Problem Solving",
+    "teaching students": "Teaching",
+    "financial reports": "Financial Analysis",
+    "brick laying": "Masonry",
+    "patient care": "Patient Care",
 }
 
 
+CANONICAL_SKILLS = list(set(SKILL_ALIASES.values())) + [
+    # General / Soft Skills
+    "Communication",
+    "Teamwork",
+    "Leadership",
+    "Problem Solving",
+    "Time Management",
+    "Critical Thinking",
+    "Adaptability",
+    "Customer Service",
+
+    # Business / Admin
+    "Project Management",
+    "Sales",
+    "Marketing",
+    "Business Analysis",
+    "Operations Management",
+
+    # Finance
+    "Accounting",
+    "Financial Analysis",
+    "Bookkeeping",
+    "Budgeting",
+
+    # Healthcare
+    "Patient Care",
+    "Nursing",
+    "Medical Records",
+    "Clinical Support",
+
+    # Construction / Trades
+    "Construction",
+    "Carpentry",
+    "Plumbing",
+    "Electrical Work",
+    "Masonry",
+
+    # Education
+    "Teaching",
+    "Curriculum Development",
+    "Classroom Management",
+
+    # Tech (keep yours)
+    "Data Analysis",
+    "Software Development",
+]
+
 def normalize_skill(skill: str) -> str:
     cleaned = " ".join(skill.strip().split()).lower()
+
     if not cleaned:
         return ""
-    return SKILL_ALIASES.get(cleaned, skill.strip())
+
+    # normalize separators
+    cleaned = cleaned.replace("-", " ")
+    cleaned = cleaned.replace("_", " ")
+
+    # remove common noise words
+    STOPWORDS = ["skills", "skill", "experience", "knowledge"]
+    words = [w for w in cleaned.split() if w not in STOPWORDS]
+    cleaned = " ".join(words)
+
+    # 1. exact alias match
+    if cleaned in SKILL_ALIASES:
+        return SKILL_ALIASES[cleaned]
+
+    # 2. fuzzy match
+    match, score, _ = process.extractOne(
+        cleaned,
+        CANONICAL_SKILLS,
+        scorer=fuzz.token_sort_ratio
+    )
+
+    if score >= 75:
+        return match
+
+    return skill.strip()
 
 
 def normalize_skills(skills: list[str]) -> list[str]:
