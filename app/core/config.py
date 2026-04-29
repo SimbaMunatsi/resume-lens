@@ -33,12 +33,6 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = Field(default="")
     OPENAI_MODEL: str = Field(default="gpt-4.1-mini")
 
-    # LangSmith Observability
-    LANGSMITH_API_KEY: str | None = None
-    LANGSMITH_TRACING: str = "true"
-    LANGSMITH_PROJECT: str = "resume-lens"
-    LANGSMITH_ENDPOINT: str = "https://eu.api.smith.langchain.com"
-
     @property
     def database_url(self) -> str:
         return (
