@@ -6,7 +6,6 @@ import requests
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
-
 def get_api_base_url() -> str:
     env_value = os.getenv("API_BASE_URL")
     if env_value:
@@ -17,9 +16,7 @@ def get_api_base_url() -> str:
     except (StreamlitSecretNotFoundError, KeyError, FileNotFoundError):
         return "http://localhost:8000/api/v1"
 
-
 API_BASE_URL = get_api_base_url()
-
 
 def api_headers() -> dict[str, str]:
     token = st.session_state.get("access_token")
@@ -27,7 +24,6 @@ def api_headers() -> dict[str, str]:
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return headers
-
 
 def register_user(username: str, email: str, password: str) -> tuple[bool, str]:
     response = requests.post(
@@ -48,7 +44,6 @@ def register_user(username: str, email: str, password: str) -> tuple[bool, str]:
     except Exception:
         detail = "Registration failed."
     return False, detail
-
 
 def login_user(email: str, password: str) -> tuple[bool, str]:
     response = requests.post(
@@ -71,7 +66,6 @@ def login_user(email: str, password: str) -> tuple[bool, str]:
     except Exception:
         detail = "Login failed."
     return False, detail
-
 
 def run_analysis(
     *,
@@ -125,7 +119,6 @@ def run_analysis(
         detail = "Analysis failed."
     return False, detail
 
-
 def get_history() -> tuple[bool, list[dict[str, Any]] | str]:
     response = requests.get(
         f"{API_BASE_URL}/analysis/history",
@@ -141,7 +134,6 @@ def get_history() -> tuple[bool, list[dict[str, Any]] | str]:
     except Exception:
         detail = "Failed to load history."
     return False, detail
-
 
 def get_report(analysis_id: int) -> tuple[bool, dict[str, Any] | str]:
     response = requests.get(
@@ -159,7 +151,6 @@ def get_report(analysis_id: int) -> tuple[bool, dict[str, Any] | str]:
         detail = "Failed to load report."
     return False, detail
 
-
 def get_preferences() -> tuple[bool, dict[str, Any] | str]:
     response = requests.get(
         f"{API_BASE_URL}/memory/preferences",
@@ -175,7 +166,6 @@ def get_preferences() -> tuple[bool, dict[str, Any] | str]:
     except Exception:
         detail = "Failed to load preferences."
     return False, detail
-
 
 def update_preferences(
     preferred_rewrite_style: str | None,
@@ -202,7 +192,6 @@ def update_preferences(
     except Exception:
         detail = "Failed to update preferences."
     return False, detail
-
 
 def render_auth_section() -> None:
     st.subheader("Authentication")
@@ -235,11 +224,9 @@ def render_auth_section() -> None:
                 else:
                     st.error(message)
 
-
 def render_profile(candidate_profile: dict[str, Any]) -> None:
     st.subheader("Candidate Profile")
     st.json(candidate_profile)
-
 
 def render_gap_analysis(gap_analysis: dict[str, Any]) -> None:
     st.subheader("Gap Analysis")
@@ -263,7 +250,6 @@ def render_gap_analysis(gap_analysis: dict[str, Any]) -> None:
 
     if gap_analysis.get("scoring_notes"):
         st.info(gap_analysis["scoring_notes"])
-
 
 def render_final_report(final_report: dict[str, Any]) -> None:
     st.subheader("Final Report")
@@ -294,7 +280,6 @@ def render_final_report(final_report: dict[str, Any]) -> None:
     st.markdown("### Action Plan")
     for action in final_report.get("action_plan", []):
         st.markdown(f"- {action}")
-
 
 def render_historical_improvement(historical_improvement: dict[str, Any] | None) -> None:
     st.subheader("Historical Improvement Tracking")
@@ -329,7 +314,6 @@ def render_historical_improvement(historical_improvement: dict[str, Any] | None)
 
     if historical_improvement.get("summary"):
         st.success(historical_improvement["summary"])
-
 
 def render_analysis_tab() -> None:
     st.subheader("Run Analysis")
@@ -369,8 +353,7 @@ def render_analysis_tab() -> None:
         "Rewrite Style",
         options=["concise", "technical", "achievement-focused"],
     )
-
-    target_role = st.text_input("Target Role (optional)", placeholder="Backend Engineer")
+    target_role = st.text_input("Target Role (optional)", placeholder="Job Title")
 
     if st.button("Run Resume Analysis", type="primary"):
         if input_mode == "Paste Text" and not resume_text:
@@ -389,7 +372,6 @@ def render_analysis_tab() -> None:
                 rewrite_style=rewrite_style,
                 target_role=target_role or None,
             )
-
         if not ok:
             st.error(str(result))
             return
@@ -399,7 +381,6 @@ def render_analysis_tab() -> None:
         render_gap_analysis(result.get("gap_analysis") or {})
         render_final_report(result.get("final_report") or {})
         render_historical_improvement(result.get("historical_improvement"))
-
 
 def render_history_tab() -> None:
     st.subheader("Analysis History")
@@ -435,7 +416,6 @@ def render_history_tab() -> None:
         st.subheader(f"Saved Report: Analysis #{loaded_report['analysis_id']}")
         render_final_report(loaded_report["final_report"])
 
-
 def render_preferences_tab() -> None:
     st.subheader("Preferences")
 
@@ -454,7 +434,6 @@ def render_preferences_tab() -> None:
                 current.get("preferred_rewrite_style") or "concise"
             ),
         )
-
         target_roles_text = st.text_area(
             "Preferred Target Roles (one per line)",
             value="\n".join(current.get("preferred_target_roles", [])),
@@ -483,21 +462,16 @@ def render_preferences_tab() -> None:
     st.markdown("### Current Memory Snapshot")
     st.json(current)
 
-
 def main() -> None:
     st.set_page_config(
         page_title="ResumeLens",
         page_icon="📄",
         layout="wide",
     )
-
     st.title("ResumeLens")
-    st.caption("AI-powered resume analyzer with LangGraph agents, memory, and persistence.")
+    st.caption("AI-powered resume analyzer. Lets fix your resume")
 
     with st.sidebar:
-        st.markdown("### Backend")
-        st.code(API_BASE_URL)
-
         if st.session_state.get("access_token"):
             st.success(f"Logged in as {st.session_state.get('user_email')}")
             if st.button("Logout"):
@@ -520,7 +494,6 @@ def main() -> None:
 
     with tab3:
         render_preferences_tab()
-
 
 if __name__ == "__main__":
     main()
