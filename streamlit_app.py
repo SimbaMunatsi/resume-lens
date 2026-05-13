@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from typing import Any
 
 import requests
@@ -17,6 +18,33 @@ def get_api_base_url() -> str:
         return "http://localhost:8000/api/v1"
 
 API_BASE_URL = get_api_base_url()
+
+def wait_for_backend():
+    """Check if backend is alive, if not, wait and show a spinner."""
+    backend_ready = False
+    
+    # We use a placeholder so the spinner disappears once the backend is ready
+    with st.spinner("🚀 Waking up the backend server... This usually takes 30-60 seconds on the free tier."):
+        # Try up to 20 times (approx 1 minute total)
+        for i in range(20):
+            try:
+                # Pings the health endpoint
+                # Note: Ensure your FastAPI has a @app.get("/api/v1/health") or similar route
+                response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+                if response.status_code == 200:
+                    backend_ready = True
+                    break
+            except requests.exceptions.ConnectionError:
+                time.sleep(3)  # Wait 3 seconds before retrying
+            except Exception:
+                # If it's a different error (like 404), the server might be up but route is wrong
+                # We'll treat any response as "awake" for now
+                backend_ready = True
+                break
+    
+    if not backend_ready:
+        st.error("The backend is taking longer than usual to start. Please refresh the page.")
+        st.stop()
 
 def api_headers() -> dict[str, str]:
     token = st.session_state.get("access_token")
@@ -469,7 +497,10 @@ def main() -> None:
         layout="wide",
     )
     st.title("ResumeLens")
-    st.caption("AI-powered resume analyzer. Lets fix your resume")
+    st.caption("AI-powered resume analyzer. Let's fix your resume")
+
+    # Call the cold-start waiter before anything else
+    wait_for_backend()
 
     with st.sidebar:
         if st.session_state.get("access_token"):

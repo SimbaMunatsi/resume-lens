@@ -1,16 +1,69 @@
 services:
+  # --- 1. The PostgreSQL Database Container ---
   db:
+    # Using standard PostgreSQL 16
     image: postgres:16
     container_name: resume_lens_db
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-resume_lens}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Healthcheck to prevent the API from crashing before the DB is ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-resume_lens}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- 2. The FastAPI Backend Container ---
+  resumelens_api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: resumelens_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      # Standard database URL using the internal docker network name ('db')
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-resume_lens}
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_lens}
+
+      # API & Security Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+ 
+      - MAX_UPLOAD_SIZE_BYTES=${MAX_UPLOAD_SIZE_BYTES}
+      - ALLOWED_RESUME_EXTENSIONS=${ALLOWED_RESUME_EXTENSIONS}
+      - JOB_FETCH_TIMEOUT_SECONDS=${JOB_FETCH_TIMEOUT_SECONDS}
+      - MAX_JOB_DESCRIPTION_CHARS=${MAX_JOB_DESCRIPTION_CHARS}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # --- 3. The Streamlit Frontend Container ---
+  resumelens_ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: resumelens_ui
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://resumelens_api:8000/api/v1
+    depends_on:
+      - resumelens_api
 
 volumes:
   pgdata:
