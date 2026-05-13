@@ -12,6 +12,9 @@ from app.db import session as session_module
 from app.tools.job_fetcher import JobFetchError
 from app.tools.resume_extractor import ResumeExtractionError
 
+from app.db.base import Base 
+
+
 setup_logging()
 logger = logging.getLogger(__name__)
 
@@ -21,9 +24,15 @@ async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.APP_NAME, settings.APP_VERSION)
 
     try:
+        # 1. Check if the database is alive
         with session_module.engine.connect() as connection:
             connection.execute(text("SELECT 1"))
         logger.info("Database connection check passed.")
+        
+        # 2. Tell SQLAlchemy to build any missing tables in Supabase
+        Base.metadata.create_all(bind=session_module.engine)
+        logger.info("Database tables verified and created successfully.")
+
     except Exception:
         logger.exception("Database connection check failed.")
         raise

@@ -24,7 +24,7 @@ def wait_for_backend():
     backend_ready = False
     
     # We use a placeholder so the spinner disappears once the backend is ready
-    with st.spinner("🚀 Waking up the backend server... This usually takes 30-60 seconds on the free tier."):
+    with st.spinner("🚀 Waking up the backend server... This usually takes 30-60 seconds."):
         # Try up to 20 times (approx 1 minute total)
         for i in range(20):
             try:
